@@ -9,14 +9,12 @@ shared_scripts {
 
 client_scripts {
     'client/main.lua',
-}
-
-server_script {	
-    'server/main.lua',
+    'client/job.lua',
 }
 
 escrow_ignore {
     'shared/config.lua',
+    'client/job.lua',
 }
 
 lua54 'yes'

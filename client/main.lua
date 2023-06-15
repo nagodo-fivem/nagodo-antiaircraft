@@ -21,24 +21,21 @@ Citizen.CreateThread(function()
                 if not IsAllowed(v.allowedJobs, v.allowedVehicleModels, v.needOneOfBoth) then
                     DestroyVehicle()
                 else
-                    Citizen.Wait(5000)
+                    Citizen.Wait(2000)
                 end
                 break
             end
                 
         end
         inZone = _inZone
-
     end
 
 end)
 
-function SetupBlips() 
+function SetupBlips()
     if next(Config.Zones) then
-
         for k, v in pairs(Config.Zones) do
-            AddTextEntry('NoFlyZone', Config.BlipData.label)
-
+            
             local radius_blip = AddBlipForRadius(v.coords, v.radius)
             local blip = AddBlipForCoord(v.coords)
 
@@ -64,39 +61,39 @@ function DestroyVehicle()
         destroying = true
         
         if inZone then
-           
             if not HasWeaponAssetLoaded(GetHashKey("WEAPON_RPG")) then
                 RequestWeaponAsset(GetHashKey("WEAPON_RPG"), 31, 0)
                 while not HasWeaponAssetLoaded(GetHashKey("WEAPON_RPG")) do
                     Wait(0)
                 end
             end
-
             local veh = GetVehiclePedIsIn(PlayerPedId(), false)
             local pCoords = GetEntityCoords(veh)
             local from_coords, hit_coords = CalculateHitCoords(pCoords, veh)
-
-            ShootSingleBulletBetweenCoords(f_coords, h_coords, 5000, true, GetHashKey("WEAPON_RPG"), PlayerPedId(), true, false, 2000.0)
-            Citizen.Wait(500)
-          
-            AddExplosion(h_coords, 10, 1.0, true, false, 1.0)
-            destroying = false
+            local b = ShootSingleBulletBetweenCoords(from_coords, hit_coords, 5000, true, GetHashKey("WEAPON_RPG"), PlayerPedId(), true, false, 2000.0)
+            -- Calculate the time it takes for the missile go from from_coords to hit_coords
+            local waitEx = math.floor(#(from_coords - hit_coords) / 2000 * 1000) + 250
+            Citizen.Wait(waitEx)
+            AddExplosion(hit_coords, 10, 1.0, true, false, 1.0)
         end
+        destroying = false
     end
 
 end
 
-function CalculateHitCoords(c, v)
-    local speed = GetEntitySpeed(v)
+function CalculateHitCoords(coords, veh)
+    local speed = GetEntitySpeed(veh)
 
-    local forward = GetEntityForwardVector(v)
+    local forward = GetEntityForwardVector(veh)
 
-    local fireCoords = c + forward * (100.0) + vector3(0.0, 0.0, 30.0)
+    local fireCoords = coords + forward * (100.0) + vector3(0.0, 0.0, 30.0)
 
 
-    local hit = GetEntityCoords(v)
+    --Calculate where the player will be in 500 ms going forward
+    local hitcoords = GetEntityCoords(veh) + forward * (speed * 0.5)
+   
     
-    return fireCoords, hit
+    return fireCoords, hitcoords
 
 end
 
@@ -144,7 +141,13 @@ function IsAllowed(allowedJobs, allowedVehicleModels, needBoth)
         end
     end
 
-    if needBoth then
+    if Config.Framework == "standalone" then
+        if allowedVehicle then
+            return true
+        end
+    end
+
+    if needBoth  then
         if allowedJob and allowedVehicle then
             return true
         end
