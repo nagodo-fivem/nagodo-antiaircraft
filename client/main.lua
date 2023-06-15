@@ -19,7 +19,7 @@ Citizen.CreateThread(function()
 
                 _inZone = true
                 if not IsAllowed(v.allowedJobs, v.allowedVehicleModels, v.needOneOfBoth) then
-                    DestroyVehicle()
+                    DestroyVehicle(v.missileAccuracy)
                 else
                     Citizen.Wait(2000)
                 end
@@ -56,7 +56,7 @@ function SetupBlips()
 end
 
 
-function DestroyVehicle()
+function DestroyVehicle(acc)
     if not destroying then
         destroying = true
         
@@ -69,10 +69,10 @@ function DestroyVehicle()
             end
             local veh = GetVehiclePedIsIn(PlayerPedId(), false)
             local pCoords = GetEntityCoords(veh)
-            local from_coords, hit_coords = CalculateHitCoords(pCoords, veh)
+            local from_coords, hit_coords = CalculateHitCoords(pCoords, veh, acc)
             local b = ShootSingleBulletBetweenCoords(from_coords, hit_coords, 5000, true, GetHashKey("WEAPON_RPG"), PlayerPedId(), true, false, 2000.0)
             -- Calculate the time it takes for the missile go from from_coords to hit_coords
-            local waitEx = math.floor(#(from_coords - hit_coords) / 2000 * 1000) + 250
+            local waitEx = math.floor(#(from_coords - hit_coords) / 2000 * 1000) + 320
             Citizen.Wait(waitEx)
             AddExplosion(hit_coords, 10, 1.0, true, false, 1.0)
         end
@@ -81,17 +81,23 @@ function DestroyVehicle()
 
 end
 
-function CalculateHitCoords(coords, veh)
+function CalculateHitCoords(coords, veh, accuracy)
     local speed = GetEntitySpeed(veh)
 
     local forward = GetEntityForwardVector(veh)
 
     local fireCoords = coords + forward * (100.0) + vector3(0.0, 0.0, 30.0)
 
-
+    
     --Calculate where the player will be in 500 ms going forward
     local hitcoords = GetEntityCoords(veh) + forward * (speed * 0.5)
-   
+    
+    local rnd = math.random(0, 100)
+    if rnd > accuracy then
+        local rndX = math.random(-20, 20)
+        local rndY = math.random(-20, 20)
+        hitcoords = hitcoords + vector3(rndX, rndY, 0.0)
+    end
     
     return fireCoords, hitcoords
 
