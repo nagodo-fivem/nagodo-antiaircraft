@@ -108,6 +108,11 @@ function IsAllowed(allowedJobs, allowedVehicleModels, needBoth)
     local allowedVehicle = false
     
     local playerPed = PlayerPedId()
+    
+    --Check if player is dead
+    if IsEntityDead(playerPed) then
+        return true
+    end
 
     -- Check if player is in a plane or heli
     local isInHeli = IsPedInAnyHeli(playerPed)
